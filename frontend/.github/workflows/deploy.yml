@@ -1,0 +1,38 @@
+name: Build and Deploy Astro to EC2
+
+on:
+  push:
+    branches:
+      - main # Update this if your primary branch is named 'master'
+
+jobs:
+  build-and-deploy:
+    name: Build and Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20' # Matches current LTS, adjust if needed
+
+      - name: Install Dependencies
+        working-directory: ./frontend
+        run: npm install
+
+      - name: Build Astro Static Site
+        working-directory: ./frontend
+        run: npm run build
+
+      - name: Deploy to EC2 via SCP
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "frontend/dist/*"
+          target: "/var/www/turquesa.shop" # Update to your exact web server root path on EC2
+          strip_components: 2 # Strips the "frontend/dist/" folder structure so only the files copy over
